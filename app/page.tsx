@@ -289,7 +289,7 @@ export default function Home() {
               </div>
 
               {/* 1. 성적표 */}
-              <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#444', marginBottom: '10px' }}>🏆 이번 달 성적표 ({currentMonthKey})</h3>
+              <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#444', marginBottom: '10px' }}>🏆 이번 달 성적 ({currentMonthKey})</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '25px' }}>
                 <div style={{ background: '#eff6ff', padding: '15px', borderRadius: '10px', border: '1px solid #bfdbfe', textAlign: 'center' }}>
                     <span style={{ fontSize: '13px', color: '#1e40af', fontWeight: 'bold' }}>총 매출</span>
@@ -338,7 +338,7 @@ export default function Home() {
               <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#444', marginBottom: '10px' }}>📅 최근 6개월 매출 흐름</h3>
               <div style={{ display: 'flex', alignItems: 'flex-end', height: '150px', gap: '5px', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
                 {monthlyData.map((d) => {
-                  const MAX_BAR_HEIGHT = 120; // 그래프 높이 조절
+                  const MAX_BAR_HEIGHT = 120; 
                   // 👇 여기도 Number() 추가
                   const heightPx = d.revenue === 0 ? 2 : (Number(d.revenue) / Number(maxRevenue)) * MAX_BAR_HEIGHT;
                   
@@ -382,7 +382,15 @@ export default function Home() {
 
 // 👇 하위 컴포넌트들도 모두 포함 (모바일 최적화 스타일 적용됨)
 function RegisterView({ newItem, setNewItem, handlePhoneChange, file, setFile, isUploading, addTicket }: any) {
-    const inputStyle = { padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', width: '100%', fontSize: '15px' };
+    const inputStyle = { 
+      padding: '12px', 
+      border: '1px solid #e5e7eb', 
+      borderRadius: '8px', 
+      width: '100%', 
+      fontSize: '15px',
+      color: '#000', // 👈 입력할 때 글자 색 (진한 검정)
+      fontWeight: 'bold' // 👈 입력할 때 글자 굵기 (굵게)
+    };
     const labelStyle = { fontSize: '13px', color: '#666', marginBottom: '5px', display: 'block', fontWeight: 'bold' };
     return (
       <div style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
