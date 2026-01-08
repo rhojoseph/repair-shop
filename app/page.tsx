@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { db, storage } from '../lib/firebase';
 import { collection, onSnapshot, addDoc, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-// 👇 이미지 압축 기능 필수 포함
+// 👇 이미지 압축 기능
 import imageCompression from 'browser-image-compression';
 
 export default function Home() {
-  // 👇 에러 수정: <any[]> 추가 (데이터가 없어도 에러 안 나게)
+  // 👇 에러 방지를 위한 <any[]> 타입 지정
   const [tickets, setTickets] = useState<any[]>([]);
   
   // 🔍 검색 및 뷰 상태
@@ -52,7 +52,7 @@ export default function Home() {
 
   const currentMonthKey = today.slice(0, 7); // "2026-01"
 
-  // --- 📊 통계 데이터 계산 (에러 방지를 위해 Number() 추가) ---
+  // --- 📊 통계 데이터 계산 (에러 방지 Number 추가됨) ---
   const todayRevenue = tickets
     .filter(t => t.createdAt && t.createdAt.toDate && getTodayStringFromDate(t.createdAt.toDate()) === today)
     .reduce((sum, t) => sum + Number(t.price || 0), 0);
@@ -84,13 +84,12 @@ export default function Home() {
   });
   const maxRevenue = Math.max(...monthlyData.map(d => d.revenue)) || 1;
 
-  // 카테고리/결제수단 분석 (여기가 에러 원인! any 추가 및 Number로 감싸기)
+  // 카테고리/결제수단 분석 (에러 방지 Number 추가됨)
   const categoryStats = tickets.reduce((acc: any, t) => {
     const cat = t.category || '기타';
     acc[cat] = (acc[cat] || 0) + Number(t.price || 0);
     return acc;
   }, {});
-  // 👇 여기가 빨간 에러 났던 곳 (Number 추가로 해결)
   const totalForStats = Object.values(categoryStats).reduce((a: any, b: any) => Number(a) + Number(b), 0) || 1;
   
   let topCategory = '없음';
@@ -129,7 +128,6 @@ export default function Home() {
     setNewItem({ ...newItem, phone: val });
   };
 
-  // ✅ 이미지 압축 함수 유지
   const uploadImage = async () => {
     if (!file) return null;
     
@@ -176,7 +174,7 @@ export default function Home() {
 
       await addDoc(collection(db, "repairs"), newTicketData);
       
-      // 🖨️ 자동 인쇄 기능 유지
+      // 🖨️ 자동 인쇄
       handlePrint({ 
         ...newTicketData, 
         createdAt: { toDate: () => new Date() } 
@@ -310,7 +308,7 @@ export default function Home() {
                     <span style={{ fontSize: '20px' }}>🥇</span>
                     <span>
                       <strong>효자 종목은 [{topCategory}] 입니다!</strong> <br/>
-                      {/* 👇 여기가 에러나던 부분입니다. Number()로 감싸서 해결! */}
+                      {/* 👇 여기도 Number() 추가 */}
                       <span style={{fontSize: '14px', color: '#666'}}>지금 매출의 <strong style={{color:'#15803d'}}>{Math.round((Number(topCatRevenue)/Number(totalForStats))*100)}%</strong>를 벌어주고 있어요.</span>
                     </span>
                   </li>
@@ -338,7 +336,7 @@ export default function Home() {
               <div style={{ display: 'flex', alignItems: 'flex-end', height: '200px', gap: '8px', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
                 {monthlyData.map((d) => {
                   const MAX_BAR_HEIGHT = 150; 
-                  // 👇 여기도 혹시 몰라 Number() 추가
+                  // 👇 여기도 Number() 추가
                   const heightPx = d.revenue === 0 ? 2 : (Number(d.revenue) / Number(maxRevenue)) * MAX_BAR_HEIGHT;
                   
                   return (
@@ -379,7 +377,7 @@ export default function Home() {
   );
 }
 
-// 👇 여기도 any 추가
+// 👇 하위 컴포넌트들도 모두 포함 (RegisterView, ListView, TabButton, TicketCard)
 function RegisterView({ newItem, setNewItem, handlePhoneChange, file, setFile, isUploading, addTicket }: any) {
     const inputStyle = { padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', width: '100%', fontSize: '15px' };
     const labelStyle = { fontSize: '13px', color: '#666', marginBottom: '5px', display: 'block', fontWeight: 'bold' };
@@ -397,7 +395,8 @@ function RegisterView({ newItem, setNewItem, handlePhoneChange, file, setFile, i
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div><label style={labelStyle}>마감 예정일</label><input type="date" value={newItem.dueDate} onChange={(e) => setNewItem({...newItem, dueDate: e.target.value})} style={inputStyle} /></div>
-            <div><label style={labelStyle}>사진 첨부</label><label style={{ ...inputStyle, display: 'block', cursor: 'pointer', background: '#f9fafb', textAlign: 'center', color: file ? '#2563eb' : '#666' }}>{file ? `📸 ${file.name}` : "📷 사진 선택"}<input type="file" accept="image/*" onChange={(e) => setFile(e.target.files[0])} style={{ display: 'none' }} /></label></div>
+            {/* 👇 에러 수정: e.target.files && 체크 추가 */}
+            <div><label style={labelStyle}>사진 첨부</label><label style={{ ...inputStyle, display: 'block', cursor: 'pointer', background: '#f9fafb', textAlign: 'center', color: file ? '#2563eb' : '#666' }}>{file ? `📸 ${file.name}` : "📷 사진 선택"}<input type="file" accept="image/*" onChange={(e: any) => setFile(e.target.files && e.target.files[0])} style={{ display: 'none' }} /></label></div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', alignItems: 'end' }}>
             <div><label style={labelStyle}>금액 (원)</label><input type="number" placeholder="0" value={newItem.price} onChange={(e) => setNewItem({...newItem, price: e.target.value})} style={inputStyle} /></div>
@@ -413,7 +412,6 @@ function RegisterView({ newItem, setNewItem, handlePhoneChange, file, setFile, i
     );
 }
 
-// 👇 여기도 any 추가
 function ListView({ searchTerm, setSearchTerm, searchDate, setSearchDate, filteredList, toggleStatus, deleteTicket, sendSms, onPrint }: any) {
   return (
     <>
@@ -429,12 +427,10 @@ function ListView({ searchTerm, setSearchTerm, searchDate, setSearchDate, filter
   );
 }
 
-// 👇 여기도 any 추가
 function TabButton({ name, active, onClick }: any) {
   return <button onClick={onClick} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: active ? 'white' : 'transparent', fontWeight: active ? 'bold' : 'normal', color: active ? 'black' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}>{name}</button>;
 }
 
-// 👇 여기도 any 추가
 function TicketCard({ ticket, toggleStatus, deleteTicket, sendSms, onPrint }: any) {
   const getStatusColor = (s: any) => {
     if (s === '수선완료') return { bg: '#dcfce7', text: '#166534' };
