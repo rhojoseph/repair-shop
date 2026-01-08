@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { db, storage } from '../lib/firebase';
 import { collection, onSnapshot, addDoc, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+// 👇 이미지 압축 기능 필수 포함
 import imageCompression from 'browser-image-compression';
 
 export default function Home() {
-  // 👇 여기가 수정된 부분입니다! (<any[]> 추가됨)
+  // 👇 에러 수정: <any[]> 추가 (데이터가 없어도 에러 안 나게)
   const [tickets, setTickets] = useState<any[]>([]);
   
   // 🔍 검색 및 뷰 상태
@@ -15,7 +16,7 @@ export default function Home() {
   const [searchDate, setSearchDate] = useState('');
   const [view, setView] = useState('dashboard'); 
 
-  // 🖨️ 인쇄용 상태 (여기도 <any> 추가!)
+  // 🖨️ 인쇄용 상태
   const [printTicket, setPrintTicket] = useState<any>(null);
 
   // 입력창 상태
@@ -23,21 +24,20 @@ export default function Home() {
     name: '', phone: '', category: '하의', item: '', price: '', paymentMethod: '카드', 
     isUrgent: false, dueDate: new Date().toISOString().split('T')[0], photoUrl: '' 
   });
-  const [file, setFile] = useState<any>(null); // 여기도 <any> 추가
+  const [file, setFile] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   // 1. 데이터 가져오기
   useEffect(() => {
     const q = query(collection(db, "repairs"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      // 이제 에러 안 남!
       setTickets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
     return () => unsubscribe();
   }, []);
 
   // --- 📅 날짜 계산 함수 ---
-  function getTodayStringFromDate(date: any) { // 날짜에도 any 추가
+  function getTodayStringFromDate(date: any) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -52,7 +52,7 @@ export default function Home() {
 
   const currentMonthKey = today.slice(0, 7); // "2026-01"
 
-  // --- 📊 통계 데이터 계산 ---
+  // --- 📊 통계 데이터 계산 (에러 방지를 위해 Number() 추가) ---
   const todayRevenue = tickets
     .filter(t => t.createdAt && t.createdAt.toDate && getTodayStringFromDate(t.createdAt.toDate()) === today)
     .reduce((sum, t) => sum + Number(t.price || 0), 0);
@@ -64,7 +64,7 @@ export default function Home() {
   const todayTickets = tickets.filter(t => t.dueDate === today);
   const tomorrowTickets = tickets.filter(t => t.dueDate === tomorrow);
 
-  // 6개월 추이 분석
+  // 6개월 추이 그래프 데이터
   const getLast6Months = () => {
     const months = [];
     for (let i = 5; i >= 0; i--) {
@@ -84,21 +84,25 @@ export default function Home() {
   });
   const maxRevenue = Math.max(...monthlyData.map(d => d.revenue)) || 1;
 
-  // 카테고리/결제수단 분석
-  const categoryStats = tickets.reduce((acc: any, t) => { // acc에 any 추가
+  // 카테고리/결제수단 분석 (여기가 에러 원인! any 추가 및 Number로 감싸기)
+  const categoryStats = tickets.reduce((acc: any, t) => {
     const cat = t.category || '기타';
     acc[cat] = (acc[cat] || 0) + Number(t.price || 0);
     return acc;
   }, {});
-  const totalForStats = Object.values(categoryStats).reduce((a: any, b: any) => a + b, 0) || 1; // a,b에 any 추가
+  // 👇 여기가 빨간 에러 났던 곳 (Number 추가로 해결)
+  const totalForStats = Object.values(categoryStats).reduce((a: any, b: any) => Number(a) + Number(b), 0) || 1;
   
   let topCategory = '없음';
   let topCatRevenue = 0;
-  Object.entries(categoryStats).forEach(([cat, rev]: any) => { // rev에 any 추가
-    if (rev > topCatRevenue) { topCategory = cat; topCatRevenue = rev; }
+  Object.entries(categoryStats).forEach(([cat, rev]: any) => {
+    if (Number(rev) > topCatRevenue) { 
+      topCategory = cat; 
+      topCatRevenue = Number(rev); 
+    }
   });
 
-  const paymentStats = tickets.reduce((acc: any, t) => { // acc에 any 추가
+  const paymentStats = tickets.reduce((acc: any, t) => {
     const method = t.paymentMethod || '카드';
     acc[method] = (acc[method] || 0) + 1;
     return acc;
@@ -106,15 +110,18 @@ export default function Home() {
   
   let topPayment = '카드';
   let topPaymentCount = 0;
-  Object.entries(paymentStats).forEach(([method, count]: any) => { // count에 any 추가
-    if (count > topPaymentCount) { topPayment = method; topPaymentCount = count; }
+  Object.entries(paymentStats).forEach(([method, count]: any) => {
+    if (Number(count) > topPaymentCount) { 
+      topPayment = method; 
+      topPaymentCount = Number(count); 
+    }
   });
 
   const avgPrice = monthCount > 0 ? Math.round(monthRevenue / monthCount) : 0;
 
 
   // --- 기능 함수들 ---
-  const handlePhoneChange = (e: any) => { // e에 any 추가
+  const handlePhoneChange = (e: any) => {
     let val = e.target.value.replace(/[^0-9]/g, '');
     if (val.length > 11) val = val.slice(0, 11);
     if (val.length > 7) val = val.slice(0, 3) + '-' + val.slice(3, 7) + '-' + val.slice(7);
@@ -122,19 +129,20 @@ export default function Home() {
     setNewItem({ ...newItem, phone: val });
   };
 
+  // ✅ 이미지 압축 함수 유지
   const uploadImage = async () => {
     if (!file) return null;
     
     try {
       const options = {
-        maxSizeMB: 0.2,
-        maxWidthOrHeight: 1200,
-        useWebWorker: true,
+        maxSizeMB: 0.2,     // 0.2MB 이하로 줄이기
+        maxWidthOrHeight: 1200, 
+        useWebWorker: true, 
       };
 
       console.log(`원본 용량: ${file.size / 1024 / 1024} MB`);
       const compressedFile = await imageCompression(file, options);
-      console.log(`압축된 용량: ${compressedFile.size / 1024 / 1024} MB`);
+      console.log(`압축된 용량: ${compressedFile.size / 1024 / 1024} MB`); 
 
       const storageRef = ref(storage, `repairs/${Date.now()}_${file.name}`);
       await uploadBytes(storageRef, compressedFile);
@@ -142,7 +150,7 @@ export default function Home() {
 
     } catch (error) {
       console.log("이미지 압축 실패:", error);
-      return null;
+      return null; 
     }
   };
 
@@ -156,7 +164,7 @@ export default function Home() {
     const dailyNumber = todaysCount + 1;
 
     try {
-      if (file) photoUrl = await (uploadImage() as any); // as any 추가
+      if (file) photoUrl = await (uploadImage() as any);
       
       const newTicketData = { 
         ...newItem, 
@@ -168,6 +176,7 @@ export default function Home() {
 
       await addDoc(collection(db, "repairs"), newTicketData);
       
+      // 🖨️ 자동 인쇄 기능 유지
       handlePrint({ 
         ...newTicketData, 
         createdAt: { toDate: () => new Date() } 
@@ -183,15 +192,15 @@ export default function Home() {
     } catch (e) { alert("에러가 발생했습니다."); } finally { setIsUploading(false); }
   };
 
-  const toggleStatus = async (id: any, currentStatus: any) => { // id, status에 any 추가
+  const toggleStatus = async (id: any, currentStatus: any) => {
     let nextStatus = currentStatus === '접수' ? '수선완료' : currentStatus === '수선완료' ? '찾아감' : '접수';
     await updateDoc(doc(db, "repairs", id), { status: nextStatus });
   };
   
-  const deleteTicket = async (id: any) => confirm("삭제하시겠습니까?") && deleteDoc(doc(db, "repairs", id)); // id에 any 추가
-  const sendSms = (t: any) => confirm(`[${t.name}] 문자 발송?`) && alert(`[문자]\n${t.name}님, ${t.item} 수선 완료!`); // t에 any 추가
+  const deleteTicket = async (id: any) => confirm("삭제하시겠습니까?") && deleteDoc(doc(db, "repairs", id));
+  const sendSms = (t: any) => confirm(`[${t.name}] 문자 발송?`) && alert(`[문자]\n${t.name}님, ${t.item} 수선 완료!`);
 
-  const handlePrint = (ticket: any) => { // ticket에 any 추가
+  const handlePrint = (ticket: any) => {
     setPrintTicket(ticket);
     setTimeout(() => { 
       window.print(); 
@@ -219,6 +228,7 @@ export default function Home() {
   return (
     <div style={{ padding: '20px', backgroundColor: '#f3f4f6', minHeight: '100vh', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
       
+      {/* 🟢 라벨 인쇄 화면 */}
       {printTicket && (
         <div id="print-area" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'white', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '20px' }}>
           <div style={{ width: '300px', border: '2px solid black', padding: '15px', textAlign: 'center', fontFamily: 'sans-serif' }}>
@@ -233,6 +243,7 @@ export default function Home() {
         </div>
       )}
 
+      {/* 🔴 메인 앱 화면 */}
       <div className="no-print">
         <div style={{ marginBottom: '20px' }}>
           <h1 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '15px' }}>🧵 수선나라 사장님앱</h1>
@@ -276,6 +287,7 @@ export default function Home() {
                 <button onClick={downloadExcel} style={{ fontSize: '14px', background: '#166534', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '8px', cursor: 'pointer' }}>📥 엑셀로 저장</button>
               </div>
 
+              {/* 1. 성적표 */}
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#444', marginBottom: '15px' }}>🏆 이번 달 성적표 ({currentMonthKey})</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '30px' }}>
                 <div style={{ background: '#eff6ff', padding: '20px', borderRadius: '12px', border: '2px solid #bfdbfe', textAlign: 'center' }}>
@@ -288,6 +300,7 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* 2. 제미나이 점장 브리핑 */}
               <div style={{ background: '#f0fdf4', padding: '25px', borderRadius: '15px', marginBottom: '40px', border: '2px solid #86efac', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#15803d', marginBottom: '20px', display:'flex', alignItems:'center' }}>
                   🤖 제미나이 점장의 한마디
@@ -297,7 +310,8 @@ export default function Home() {
                     <span style={{ fontSize: '20px' }}>🥇</span>
                     <span>
                       <strong>효자 종목은 [{topCategory}] 입니다!</strong> <br/>
-                      <span style={{fontSize: '14px', color: '#666'}}>지금 매출의 <strong style={{color:'#15803d'}}>{Math.round((topCatRevenue/totalForStats)*100)}%</strong>를 벌어주고 있어요.</span>
+                      {/* 👇 여기가 에러나던 부분입니다. Number()로 감싸서 해결! */}
+                      <span style={{fontSize: '14px', color: '#666'}}>지금 매출의 <strong style={{color:'#15803d'}}>{Math.round((Number(topCatRevenue)/Number(totalForStats))*100)}%</strong>를 벌어주고 있어요.</span>
                     </span>
                   </li>
                   <li style={{ fontSize: '16px', color: '#333', display: 'flex', alignItems: 'start', gap: '10px' }}>
@@ -319,11 +333,13 @@ export default function Home() {
                 </ul>
               </div>
 
+              {/* 3. 그래프 (px 단위 고정) */}
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#444', marginBottom: '15px' }}>📅 최근 6개월 매출 흐름</h3>
               <div style={{ display: 'flex', alignItems: 'flex-end', height: '200px', gap: '8px', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
                 {monthlyData.map((d) => {
                   const MAX_BAR_HEIGHT = 150; 
-                  const heightPx = d.revenue === 0 ? 2 : (d.revenue / maxRevenue) * MAX_BAR_HEIGHT;
+                  // 👇 여기도 혹시 몰라 Number() 추가
+                  const heightPx = d.revenue === 0 ? 2 : (Number(d.revenue) / Number(maxRevenue)) * MAX_BAR_HEIGHT;
                   
                   return (
                     <div key={d.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
@@ -335,10 +351,12 @@ export default function Home() {
                 })}
               </div>
 
+              {/* 4. 매출 비중 */}
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#444', marginBottom: '15px', marginTop: '30px' }}>💰 뭐로 돈을 벌었을까?</h3>
               <div style={{ marginBottom: '30px' }}>
-                {Object.entries(categoryStats).map(([cat, price]: any) => { // price에 any 추가
-                  const percent = Math.round((price / totalForStats) * 100);
+                {Object.entries(categoryStats).map(([cat, price]: any) => {
+                  // 👇 여기도 Number() 추가
+                  const percent = Math.round((Number(price) / Number(totalForStats)) * 100);
                   return (
                     <div key={cat} style={{ marginBottom: '12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', marginBottom: '5px' }}>
@@ -361,6 +379,7 @@ export default function Home() {
   );
 }
 
+// 👇 여기도 any 추가
 function RegisterView({ newItem, setNewItem, handlePhoneChange, file, setFile, isUploading, addTicket }: any) {
     const inputStyle = { padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', width: '100%', fontSize: '15px' };
     const labelStyle = { fontSize: '13px', color: '#666', marginBottom: '5px', display: 'block', fontWeight: 'bold' };
@@ -394,6 +413,7 @@ function RegisterView({ newItem, setNewItem, handlePhoneChange, file, setFile, i
     );
 }
 
+// 👇 여기도 any 추가
 function ListView({ searchTerm, setSearchTerm, searchDate, setSearchDate, filteredList, toggleStatus, deleteTicket, sendSms, onPrint }: any) {
   return (
     <>
@@ -409,10 +429,12 @@ function ListView({ searchTerm, setSearchTerm, searchDate, setSearchDate, filter
   );
 }
 
+// 👇 여기도 any 추가
 function TabButton({ name, active, onClick }: any) {
   return <button onClick={onClick} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: active ? 'white' : 'transparent', fontWeight: active ? 'bold' : 'normal', color: active ? 'black' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}>{name}</button>;
 }
 
+// 👇 여기도 any 추가
 function TicketCard({ ticket, toggleStatus, deleteTicket, sendSms, onPrint }: any) {
   const getStatusColor = (s: any) => {
     if (s === '수선완료') return { bg: '#dcfce7', text: '#166534' };
