@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { db, storage } from '../lib/firebase';
 import { collection, onSnapshot, addDoc, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-// 👇 이미지 압축 기능
+// 👇 이미지 압축 기능 필수 포함
 import imageCompression from 'browser-image-compression';
 
 export default function Home() {
@@ -224,7 +224,8 @@ export default function Home() {
   });
 
   return (
-    <div style={{ padding: '20px', backgroundColor: '#f3f4f6', minHeight: '100vh', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
+    // 👇 모바일 최적화: padding을 20px -> 10px로 줄여 화면을 넓게 씀
+    <div style={{ padding: '10px', backgroundColor: '#f3f4f6', minHeight: '100vh', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto' }}>
       
       {/* 🟢 라벨 인쇄 화면 */}
       {printTicket && (
@@ -243,35 +244,37 @@ export default function Home() {
 
       {/* 🔴 메인 앱 화면 */}
       <div className="no-print">
-        <div style={{ marginBottom: '20px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '15px' }}>🧵 수선나라 사장님앱</h1>
-          <div style={{ background: '#e5e7eb', padding: '5px', borderRadius: '10px', display: 'flex', gap: '5px' }}>
+        <div style={{ marginBottom: '15px' }}>
+          {/* 👇 모바일 최적화: 제목 색상을 진한 검정(#111)으로 고정 */}
+          <h1 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '15px', color: '#111' }}>🧵 수선나라 사장님앱</h1>
+          {/* 👇 모바일 최적화: 탭 메뉴가 화면 넘어갈 때 스크롤 가능하게 (overflowX: 'auto') */}
+          <div style={{ background: '#e5e7eb', padding: '4px', borderRadius: '8px', display: 'flex', gap: '4px', overflowX: 'auto' }}>
             <TabButton name="📊 대시보드" active={view === 'dashboard'} onClick={() => setView('dashboard')} />
-            <TabButton name="✍️ 접수하기" active={view === 'register'} onClick={() => setView('register')} />
-            <TabButton name="📈 경영분석" active={view === 'stats'} onClick={() => setView('stats')} />
-            <TabButton name="📝 전체목록" active={view === 'list'} onClick={() => setView('list')} />
+            <TabButton name="✍️ 접수" active={view === 'register'} onClick={() => setView('register')} />
+            <TabButton name="📈 분석" active={view === 'stats'} onClick={() => setView('stats')} />
+            <TabButton name="📝 목록" active={view === 'list'} onClick={() => setView('list')} />
           </div>
         </div>
 
         {view === 'dashboard' && (
            <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '25px' }}>
-              <div style={{ background: '#2563eb', color: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(37, 99, 235, 0.2)' }}>
-                <span style={{ fontSize: '14px', opacity: 0.9 }}>오늘 매출</span>
-                <div style={{ fontSize: '28px', fontWeight: 'bold', marginTop: '5px' }}>{todayRevenue.toLocaleString()}원</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
+              <div style={{ background: '#2563eb', color: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(37, 99, 235, 0.2)' }}>
+                <span style={{ fontSize: '13px', opacity: 0.9 }}>오늘 매출</span>
+                <div style={{ fontSize: '22px', fontWeight: 'bold', marginTop: '5px' }}>{todayRevenue.toLocaleString()}원</div>
               </div>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                <span style={{ fontSize: '14px', color: '#666' }}>이번 달 누적</span>
-                <div style={{ fontSize: '28px', fontWeight: 'bold', marginTop: '5px', color: '#333' }}>{monthRevenue.toLocaleString()}원</div>
+              <div style={{ background: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                <span style={{ fontSize: '13px', color: '#666' }}>이번 달 누적</span>
+                <div style={{ fontSize: '22px', fontWeight: 'bold', marginTop: '5px', color: '#333' }}>{monthRevenue.toLocaleString()}원</div>
               </div>
             </div>
-            <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 10px 0', color: '#1e40af' }}>🚚 오늘 나갈 옷</h3>
-            <div style={{ display: 'grid', gap: '10px', marginBottom: '30px' }}>
-              {todayTickets.length === 0 ? <p style={{color:'#999', textAlign:'center', padding:'20px', background:'white', borderRadius:'10px'}}>없음</p> : todayTickets.map(ticket => <TicketCard key={ticket.id} ticket={ticket} toggleStatus={toggleStatus} deleteTicket={deleteTicket} sendSms={sendSms} onPrint={handlePrint} />)}
+            <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 10px 0', color: '#1e40af' }}>🚚 오늘 나갈 옷</h3>
+            <div style={{ display: 'grid', gap: '10px', marginBottom: '25px' }}>
+              {todayTickets.length === 0 ? <p style={{color:'#999', textAlign:'center', padding:'20px', background:'white', borderRadius:'10px', fontSize:'14px'}}>없음</p> : todayTickets.map(ticket => <TicketCard key={ticket.id} ticket={ticket} toggleStatus={toggleStatus} deleteTicket={deleteTicket} sendSms={sendSms} onPrint={handlePrint} />)}
             </div>
-             <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 10px 0', color: '#444' }}>📅 내일 나갈 옷</h3>
+             <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 10px 0', color: '#444' }}>📅 내일 나갈 옷</h3>
             <div style={{ display: 'grid', gap: '10px' }}>
-              {tomorrowTickets.length === 0 ? <p style={{color:'#999', textAlign:'center', padding:'20px', background:'white', borderRadius:'10px'}}>없음</p> : tomorrowTickets.map(ticket => <TicketCard key={ticket.id} ticket={ticket} toggleStatus={toggleStatus} deleteTicket={deleteTicket} sendSms={sendSms} onPrint={handlePrint} />)}
+              {tomorrowTickets.length === 0 ? <p style={{color:'#999', textAlign:'center', padding:'20px', background:'white', borderRadius:'10px', fontSize:'14px'}}>없음</p> : tomorrowTickets.map(ticket => <TicketCard key={ticket.id} ticket={ticket} toggleStatus={toggleStatus} deleteTicket={deleteTicket} sendSms={sendSms} onPrint={handlePrint} />)}
             </div>
            </>
         )}
@@ -279,89 +282,89 @@ export default function Home() {
         {view === 'register' && <RegisterView newItem={newItem} setNewItem={setNewItem} handlePhoneChange={handlePhoneChange} file={file} setFile={setFile} isUploading={isUploading} addTicket={addTicket} />}
         
         {view === 'stats' && (
-            <div style={{ background: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px', borderBottom: '2px solid #f3f4f6', paddingBottom: '10px' }}>
-                <h2 style={{ fontSize: '20px', fontWeight: 'bold' }}>📈 우리가게 분석</h2>
-                <button onClick={downloadExcel} style={{ fontSize: '14px', background: '#166534', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '8px', cursor: 'pointer' }}>📥 엑셀로 저장</button>
+            <div style={{ background: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px', borderBottom: '2px solid #f3f4f6', paddingBottom: '10px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#111' }}>📈 우리가게 분석</h2>
+                <button onClick={downloadExcel} style={{ fontSize: '12px', background: '#166534', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer' }}>엑셀저장</button>
               </div>
 
               {/* 1. 성적표 */}
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#444', marginBottom: '15px' }}>🏆 이번 달 성적표 ({currentMonthKey})</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '30px' }}>
-                <div style={{ background: '#eff6ff', padding: '20px', borderRadius: '12px', border: '2px solid #bfdbfe', textAlign: 'center' }}>
-                    <span style={{ fontSize: '15px', color: '#1e40af', fontWeight: 'bold' }}>총 매출</span>
-                    <div style={{ fontSize: '24px', fontWeight: '900', color: '#1e40af', marginTop: '8px' }}>{monthRevenue.toLocaleString()}원</div>
+              <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#444', marginBottom: '10px' }}>🏆 이번 달 성적표 ({currentMonthKey})</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '25px' }}>
+                <div style={{ background: '#eff6ff', padding: '15px', borderRadius: '10px', border: '1px solid #bfdbfe', textAlign: 'center' }}>
+                    <span style={{ fontSize: '13px', color: '#1e40af', fontWeight: 'bold' }}>총 매출</span>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: '#1e40af', marginTop: '5px' }}>{monthRevenue.toLocaleString()}원</div>
                 </div>
-                <div style={{ background: '#fdf2f8', padding: '20px', borderRadius: '12px', border: '2px solid #fbcfe8', textAlign: 'center' }}>
-                    <span style={{ fontSize: '15px', color: '#9d174d', fontWeight: 'bold' }}>작업한 옷</span>
-                    <div style={{ fontSize: '24px', fontWeight: '900', color: '#9d174d', marginTop: '8px' }}>{monthCount}벌</div>
+                <div style={{ background: '#fdf2f8', padding: '15px', borderRadius: '10px', border: '1px solid #fbcfe8', textAlign: 'center' }}>
+                    <span style={{ fontSize: '13px', color: '#9d174d', fontWeight: 'bold' }}>작업한 옷</span>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: '#9d174d', marginTop: '5px' }}>{monthCount}벌</div>
                 </div>
               </div>
 
               {/* 2. 제미나이 점장 브리핑 */}
-              <div style={{ background: '#f0fdf4', padding: '25px', borderRadius: '15px', marginBottom: '40px', border: '2px solid #86efac', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#15803d', marginBottom: '20px', display:'flex', alignItems:'center' }}>
+              <div style={{ background: '#f0fdf4', padding: '15px', borderRadius: '10px', marginBottom: '30px', border: '1px solid #86efac', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#15803d', marginBottom: '10px', display:'flex', alignItems:'center' }}>
                   🤖 제미나이 점장의 한마디
                 </h3>
-                <ul style={{ margin: 0, paddingLeft: '0', listStyle: 'none', display: 'grid', gap: '15px' }}>
-                  <li style={{ fontSize: '16px', color: '#333', display: 'flex', alignItems: 'start', gap: '10px' }}>
-                    <span style={{ fontSize: '20px' }}>🥇</span>
+                <ul style={{ margin: 0, paddingLeft: '0', listStyle: 'none', display: 'grid', gap: '10px' }}>
+                  <li style={{ fontSize: '14px', color: '#333', display: 'flex', alignItems: 'start', gap: '10px' }}>
+                    <span style={{ fontSize: '18px' }}>🥇</span>
                     <span>
                       <strong>효자 종목은 [{topCategory}] 입니다!</strong> <br/>
                       {/* 👇 여기도 Number() 추가 */}
-                      <span style={{fontSize: '14px', color: '#666'}}>지금 매출의 <strong style={{color:'#15803d'}}>{Math.round((Number(topCatRevenue)/Number(totalForStats))*100)}%</strong>를 벌어주고 있어요.</span>
+                      <span style={{fontSize: '12px', color: '#666'}}>지금 매출의 <strong style={{color:'#15803d'}}>{Math.round((Number(topCatRevenue)/Number(totalForStats))*100)}%</strong>를 벌어주고 있어요.</span>
                     </span>
                   </li>
-                  <li style={{ fontSize: '16px', color: '#333', display: 'flex', alignItems: 'start', gap: '10px' }}>
-                    <span style={{ fontSize: '20px' }}>💳</span>
+                  <li style={{ fontSize: '14px', color: '#333', display: 'flex', alignItems: 'start', gap: '10px' }}>
+                    <span style={{ fontSize: '18px' }}>💳</span>
                     <span>
                       <strong>손님들은 [{topPayment}] 결제를 선호해요.</strong> <br/>
-                      <span style={{fontSize: '14px', color: '#666'}}>
+                      <span style={{fontSize: '12px', color: '#666'}}>
                         {topPayment === '현금' ? '거스름돈을 미리 넉넉히 준비해두세요!' : '카드 결제가 많으니 정산이 편하겠네요!'}
                       </span>
                     </span>
                   </li>
-                  <li style={{ fontSize: '16px', color: '#333', display: 'flex', alignItems: 'start', gap: '10px' }}>
-                    <span style={{ fontSize: '20px' }}>💰</span>
+                  <li style={{ fontSize: '14px', color: '#333', display: 'flex', alignItems: 'start', gap: '10px' }}>
+                    <span style={{ fontSize: '18px' }}>💰</span>
                     <span>
                       <strong>손님 한 분당 평균 {avgPrice.toLocaleString()}원 쓰시네요.</strong> <br/>
-                      <span style={{fontSize: '14px', color: '#666'}}>비싼 옷 수선이 들어오면 이 금액이 쑥 올라갈 거예요.</span>
+                      <span style={{fontSize: '12px', color: '#666'}}>비싼 옷 수선이 들어오면 이 금액이 쑥 올라갈 거예요.</span>
                     </span>
                   </li>
                 </ul>
               </div>
 
               {/* 3. 그래프 (px 단위 고정) */}
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#444', marginBottom: '15px' }}>📅 최근 6개월 매출 흐름</h3>
-              <div style={{ display: 'flex', alignItems: 'flex-end', height: '200px', gap: '8px', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#444', marginBottom: '10px' }}>📅 최근 6개월 매출 흐름</h3>
+              <div style={{ display: 'flex', alignItems: 'flex-end', height: '150px', gap: '5px', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
                 {monthlyData.map((d) => {
-                  const MAX_BAR_HEIGHT = 150; 
+                  const MAX_BAR_HEIGHT = 120; // 그래프 높이 조절
                   // 👇 여기도 Number() 추가
                   const heightPx = d.revenue === 0 ? 2 : (Number(d.revenue) / Number(maxRevenue)) * MAX_BAR_HEIGHT;
                   
                   return (
-                    <div key={d.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                      <span style={{ fontSize: '12px', color: '#666', fontWeight:'bold' }}>{d.revenue > 0 ? (d.revenue/10000).toFixed(0)+'만' : ''}</span>
-                      <div style={{ width: '100%', height: `${heightPx}px`, background: d.month === currentMonthKey ? '#2563eb' : '#cbd5e1', borderRadius: '6px 6px 0 0' }}></div>
-                      <span style={{ fontSize: '12px', color: '#444', fontWeight: 'bold' }}>{d.month.split('-')[1]}월</span>
+                    <div key={d.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                      <span style={{ fontSize: '10px', color: '#666', fontWeight:'bold' }}>{d.revenue > 0 ? (d.revenue/10000).toFixed(0) : ''}</span>
+                      <div style={{ width: '100%', height: `${heightPx}px`, background: d.month === currentMonthKey ? '#2563eb' : '#cbd5e1', borderRadius: '4px 4px 0 0' }}></div>
+                      <span style={{ fontSize: '10px', color: '#444' }}>{d.month.split('-')[1]}</span>
                     </div>
                   );
                 })}
               </div>
 
               {/* 4. 매출 비중 */}
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#444', marginBottom: '15px', marginTop: '30px' }}>💰 뭐로 돈을 벌었을까?</h3>
-              <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#444', marginBottom: '10px', marginTop: '20px' }}>💰 뭐로 돈을 벌었을까?</h3>
+              <div style={{ marginBottom: '20px' }}>
                 {Object.entries(categoryStats).map(([cat, price]: any) => {
                   // 👇 여기도 Number() 추가
                   const percent = Math.round((Number(price) / Number(totalForStats)) * 100);
                   return (
-                    <div key={cat} style={{ marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', marginBottom: '5px' }}>
+                    <div key={cat} style={{ marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '3px' }}>
                         <span style={{fontWeight:'bold'}}>{cat}</span>
                         <span style={{ fontWeight: 'bold', color: '#2563eb' }}>{percent}% ({price.toLocaleString()}원)</span>
                       </div>
-                      <div style={{ width: '100%', background: '#f3f4f6', height: '12px', borderRadius: '6px', overflow: 'hidden' }}><div style={{ width: `${percent}%`, background: '#3b82f6', height: '100%' }}></div></div>
+                      <div style={{ width: '100%', background: '#f3f4f6', height: '10px', borderRadius: '5px', overflow: 'hidden' }}><div style={{ width: `${percent}%`, background: '#3b82f6', height: '100%' }}></div></div>
                     </div>
                   );
                 })}
@@ -377,35 +380,35 @@ export default function Home() {
   );
 }
 
-// 👇 하위 컴포넌트들도 모두 포함 (RegisterView, ListView, TabButton, TicketCard)
+// 👇 하위 컴포넌트들도 모두 포함 (모바일 최적화 스타일 적용됨)
 function RegisterView({ newItem, setNewItem, handlePhoneChange, file, setFile, isUploading, addTicket }: any) {
     const inputStyle = { padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', width: '100%', fontSize: '15px' };
     const labelStyle = { fontSize: '13px', color: '#666', marginBottom: '5px', display: 'block', fontWeight: 'bold' };
     return (
-      <div style={{ background: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', borderBottom: '2px solid #f3f4f6', paddingBottom: '10px' }}>새 수선 접수</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+      <div style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', color: '#111' }}>새 수선 접수</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div><label style={labelStyle}>고객 이름</label><input placeholder="홍길동" value={newItem.name} onChange={(e) => setNewItem({...newItem, name: e.target.value})} style={inputStyle} /></div>
-            <div><label style={labelStyle}>전화번호</label><input placeholder="010-0000-0000" value={newItem.phone} onChange={handlePhoneChange} style={inputStyle} maxLength={13} /></div>
+            <div><label style={labelStyle}>전화번호</label><input placeholder="번호 입력" value={newItem.phone} onChange={handlePhoneChange} style={inputStyle} maxLength={13} /></div>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <div style={{ width: '80px' }}><label style={labelStyle}>종류</label><select value={newItem.category} onChange={(e) => setNewItem({...newItem, category: e.target.value})} style={inputStyle}>{["하의", "상의", "외투", "기타"].map(c => <option key={c} value={c}>{c}</option>)}</select></div>
             <div style={{ flex: 1 }}><label style={labelStyle}>수선 내용</label><input placeholder="예: 바지 기장" value={newItem.item} onChange={(e) => setNewItem({...newItem, item: e.target.value})} style={inputStyle} /></div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div><label style={labelStyle}>마감 예정일</label><input type="date" value={newItem.dueDate} onChange={(e) => setNewItem({...newItem, dueDate: e.target.value})} style={inputStyle} /></div>
+            <div><label style={labelStyle}>마감일</label><input type="date" value={newItem.dueDate} onChange={(e) => setNewItem({...newItem, dueDate: e.target.value})} style={inputStyle} /></div>
             {/* 👇 에러 수정: e.target.files && 체크 추가 */}
-            <div><label style={labelStyle}>사진 첨부</label><label style={{ ...inputStyle, display: 'block', cursor: 'pointer', background: '#f9fafb', textAlign: 'center', color: file ? '#2563eb' : '#666' }}>{file ? `📸 ${file.name}` : "📷 사진 선택"}<input type="file" accept="image/*" onChange={(e: any) => setFile(e.target.files && e.target.files[0])} style={{ display: 'none' }} /></label></div>
+            <div><label style={labelStyle}>사진</label><label style={{ ...inputStyle, display: 'block', cursor: 'pointer', background: '#f9fafb', textAlign: 'center', color: file ? '#2563eb' : '#666', fontSize:'13px', overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }}>{file ? `📸 ${file.name}` : "📷 선택"}<input type="file" accept="image/*" onChange={(e: any) => setFile(e.target.files && e.target.files[0])} style={{ display: 'none' }} /></label></div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', alignItems: 'end' }}>
-            <div><label style={labelStyle}>금액 (원)</label><input type="number" placeholder="0" value={newItem.price} onChange={(e) => setNewItem({...newItem, price: e.target.value})} style={inputStyle} /></div>
-            <div><label style={labelStyle}>결제 방법</label><select value={newItem.paymentMethod} onChange={(e) => setNewItem({...newItem, paymentMethod: e.target.value})} style={inputStyle}><option value="카드">💳 카드</option><option value="현금">💵 현금</option><option value="이체">📱 이체</option></select></div>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', background: '#fee2e2', padding: '12px', borderRadius: '5px', color: 'red', fontWeight: 'bold', height: '46px', boxSizing: 'border-box' }}><input type="checkbox" checked={newItem.isUrgent} onChange={(e) => setNewItem({...newItem, isUrgent: e.target.checked})} style={{ marginRight: '5px' }} />급함!</label>
+            <div><label style={labelStyle}>금액</label><input type="number" placeholder="0" value={newItem.price} onChange={(e) => setNewItem({...newItem, price: e.target.value})} style={inputStyle} /></div>
+            <div><label style={labelStyle}>결제</label><select value={newItem.paymentMethod} onChange={(e) => setNewItem({...newItem, paymentMethod: e.target.value})} style={inputStyle}><option value="카드">💳 카드</option><option value="현금">💵 현금</option><option value="이체">📱 이체</option></select></div>
+            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', background: '#fee2e2', padding: '0 10px', borderRadius: '5px', color: 'red', fontWeight: 'bold', height: '44px', fontSize:'13px' }}><input type="checkbox" checked={newItem.isUrgent} onChange={(e) => setNewItem({...newItem, isUrgent: e.target.checked})} style={{ marginRight: '5px' }} />급함</label>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
-            <button onClick={() => addTicket(true)} disabled={isUploading} style={{ background: '#4b5563', color: 'white', border: 'none', padding: '15px', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}>{isUploading ? "..." : "💾 저장 + 연속 접수"}</button>
-            <button onClick={() => addTicket(false)} disabled={isUploading} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '15px', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>{isUploading ? "..." : "✅ 저장 (끝)"}</button>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '5px' }}>
+            <button onClick={() => addTicket(true)} disabled={isUploading} style={{ background: '#4b5563', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold' }}>{isUploading ? "..." : "💾 연속 접수"}</button>
+            <button onClick={() => addTicket(false)} disabled={isUploading} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold' }}>{isUploading ? "..." : "✅ 저장 완료"}</button>
           </div>
         </div>
       </div>
@@ -416,8 +419,8 @@ function ListView({ searchTerm, setSearchTerm, searchDate, setSearchDate, filter
   return (
     <>
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-        <input placeholder="🔍 이름, 전화번호 검색" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ flex: 1, padding: '15px', border: '1px solid #ddd', borderRadius: '12px', fontSize: '16px' }} />
-        <input type="date" value={searchDate} onChange={(e) => setSearchDate(e.target.value)} style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '12px', fontSize: '16px' }} />
+        <input placeholder="🔍 검색" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ flex: 1, padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '15px' }} />
+        <input type="date" value={searchDate} onChange={(e) => setSearchDate(e.target.value)} style={{ padding: '12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '15px' }} />
       </div>
       <div style={{ display: 'grid', gap: '10px' }}>
         {filteredList.map((ticket: any) => <TicketCard key={ticket.id} ticket={ticket} toggleStatus={toggleStatus} deleteTicket={deleteTicket} sendSms={sendSms} onPrint={onPrint} />)}
@@ -428,7 +431,7 @@ function ListView({ searchTerm, setSearchTerm, searchDate, setSearchDate, filter
 }
 
 function TabButton({ name, active, onClick }: any) {
-  return <button onClick={onClick} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: active ? 'white' : 'transparent', fontWeight: active ? 'bold' : 'normal', color: active ? 'black' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}>{name}</button>;
+  return <button onClick={onClick} style={{ flex: 'none', padding: '8px 12px', borderRadius: '6px', border: 'none', background: active ? 'white' : 'transparent', fontWeight: active ? 'bold' : 'normal', color: active ? 'black' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '14px' }}>{name}</button>;
 }
 
 function TicketCard({ ticket, toggleStatus, deleteTicket, sendSms, onPrint }: any) {
@@ -440,26 +443,30 @@ function TicketCard({ ticket, toggleStatus, deleteTicket, sendSms, onPrint }: an
   const statusColor = getStatusColor(ticket.status);
   const cardOpacity = ticket.status === '찾아감' ? 0.6 : 1;
 
+  // 👇 여기가 모바일 최적화의 핵심! (minWidth:0, flex:1, 줄바꿈 처리)
   return (
-    <div style={{ background: 'white', padding: '15px', borderRadius: '12px', borderLeft: ticket.isUrgent ? '5px solid #ef4444' : '5px solid #e5e7eb', boxShadow: '0 1px 2px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', opacity: cardOpacity }}>
-      <div style={{ display: 'flex', gap: '15px' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minWidth:'40px', background:'#f3f4f6', borderRadius:'8px', fontSize:'18px', fontWeight:'900', color:'#333' }}>#{ticket.dailyNumber || '?'}</div>
-        {ticket.photoUrl && <img src={ticket.photoUrl} alt="사진" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover', background: '#eee' }} />}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-            {ticket.isUrgent && <span style={{ background: '#fee2e2', color: '#ef4444', fontSize: '11px', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>급!</span>}
-            <strong style={{ fontSize: '16px' }}>{ticket.name}</strong>
-            <span style={{ fontSize: '13px', color: '#666' }}>{ticket.phone}</span>
+    <div style={{ background: 'white', padding: '12px', borderRadius: '10px', borderLeft: ticket.isUrgent ? '5px solid #ef4444' : '5px solid #e5e7eb', boxShadow: '0 1px 2px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', opacity: cardOpacity, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '10px', flex: 1, minWidth: 0 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minWidth:'35px', height:'35px', background:'#f3f4f6', borderRadius:'8px', fontSize:'16px', fontWeight:'900', color:'#333', flexShrink: 0 }}>#{ticket.dailyNumber || '?'}</div>
+        {ticket.photoUrl && <img src={ticket.photoUrl} alt="사진" style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover', background: '#eee', flexShrink: 0 }} />}
+        
+        {/* 👇 텍스트 영역이 줄어들 수 있게 설정 */}
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px', flexWrap: 'wrap' }}>
+            {ticket.isUrgent && <span style={{ background: '#fee2e2', color: '#ef4444', fontSize: '10px', padding: '2px 4px', borderRadius: '4px', fontWeight: 'bold', flexShrink: 0 }}>급!</span>}
+            <strong style={{ fontSize: '15px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#111' }}>{ticket.name}</strong>
+            <span style={{ fontSize: '12px', color: '#666' }}>{ticket.phone ? ticket.phone.slice(-4) : ''}</span>
           </div>
-          <div style={{ fontSize: '14px', color: '#444', textDecoration: ticket.status === '찾아감' ? 'line-through' : 'none' }}>{ticket.item}</div>
-          <div style={{ fontSize: '13px', color: '#666', marginTop: '4px' }}>{ticket.dueDate} <span style={{ color: '#2563eb', fontWeight: 'bold', marginLeft: '5px' }}>{Number(ticket.price).toLocaleString()}원</span></div>
+          <div style={{ fontSize: '13px', color: '#444', textDecoration: ticket.status === '찾아감' ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ticket.item}</div>
+          <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>{ticket.dueDate.slice(5)} <span style={{ color: '#2563eb', fontWeight: 'bold' }}>{Number(ticket.price).toLocaleString()}</span></div>
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', justifyContent: 'center' }}>
-        <button onClick={() => onPrint(ticket)} style={{ padding: '6px', borderRadius: '6px', background: '#333', color: 'white', border: 'none', cursor: 'pointer', fontSize: '12px' }}>🖨️ 라벨</button>
-        <button onClick={() => toggleStatus(ticket.id, ticket.status)} style={{ padding: '6px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: statusColor.bg, color: statusColor.text, fontSize: '12px', fontWeight: 'bold' }}>{ticket.status}</button>
-        {ticket.status === '수선완료' && <button onClick={() => sendSms(ticket)} style={{ padding: '6px', borderRadius: '6px', background: '#3b82f6', color: 'white', border: 'none', cursor: 'pointer', fontSize: '12px' }}>문자</button>}
-        <button onClick={() => deleteTicket(ticket.id)} style={{ padding: '6px', borderRadius: '6px', background: '#fee2e2', color: '#b91c1c', border: 'none', cursor: 'pointer', fontSize: '12px' }}>삭제</button>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', justifyContent: 'center', marginLeft: '5px', flexShrink: 0 }}>
+        <button onClick={() => onPrint(ticket)} style={{ padding: '5px', borderRadius: '5px', background: '#333', color: 'white', border: 'none', fontSize: '11px' }}>🖨️</button>
+        <button onClick={() => toggleStatus(ticket.id, ticket.status)} style={{ padding: '5px 8px', borderRadius: '5px', border: 'none', background: statusColor.bg, color: statusColor.text, fontSize: '11px', fontWeight: 'bold' }}>{ticket.status}</button>
+        {ticket.status === '수선완료' && <button onClick={() => sendSms(ticket)} style={{ padding: '5px', borderRadius: '5px', background: '#3b82f6', color: 'white', border: 'none', fontSize: '11px' }}>문자</button>}
+        <button onClick={() => deleteTicket(ticket.id)} style={{ padding: '5px', borderRadius: '5px', background: '#fee2e2', color: '#b91c1c', border: 'none', fontSize: '11px' }}>삭제</button>
       </div>
     </div>
   );
