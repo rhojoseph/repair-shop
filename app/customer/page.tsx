@@ -6,9 +6,10 @@ import { collection, query, where, getDocs, addDoc, doc, getDoc, orderBy } from 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import imageCompression from 'browser-image-compression';
 import { getTodayStringFromDate, formatPhone, DEFAULT_CATEGORIES } from '../../lib/utils';
+import PriceChatbot from '../../components/PriceChatbot';
 
 export default function CustomerPage() {
-  const [view, setView] = useState<'menu' | 'track' | 'request'>('menu');
+  const [view, setView] = useState<'menu' | 'track' | 'request' | 'price'>('menu');
   const [categories, setCategories] = useState<Record<string, string[]>>(DEFAULT_CATEGORIES);
 
   // 조회용
@@ -132,7 +133,7 @@ export default function CustomerPage() {
 
       {/* 헤더 */}
       <div style={{ textAlign: 'center', marginBottom: '20px', paddingTop: '10px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#111', marginBottom: '5px' }}>🧵 수선나라</h1>
+        <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#111', marginBottom: '5px' }}>🧵 에벤에셀옷수선</h1>
         {view !== 'menu' && (
           <button onClick={() => { setView('menu'); setTrackResults(null); setSubmitDone(false); }} style={{ fontSize: '13px', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
             ← 처음으로
@@ -153,6 +154,16 @@ export default function CustomerPage() {
             <div style={{ fontSize: '13px', color: '#666' }}>이름과 전화번호로 수선 상태를 확인하세요</div>
           </button>
 
+          <button onClick={() => setView('price')} style={{
+            padding: '25px', borderRadius: '16px', border: 'none',
+            background: 'white', cursor: 'pointer', textAlign: 'left',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+          }}>
+            <div style={{ fontSize: '28px', marginBottom: '8px' }}>💬</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#111', marginBottom: '4px' }}>가격 문의</div>
+            <div style={{ fontSize: '13px', color: '#666' }}>수선 가격을 미리 알아보세요</div>
+          </button>
+
           <button onClick={() => setView('request')} style={{
             padding: '25px', borderRadius: '16px', border: 'none',
             background: 'white', cursor: 'pointer', textAlign: 'left',
@@ -164,6 +175,9 @@ export default function CustomerPage() {
           </button>
         </div>
       )}
+
+      {/* 가격 문의 챗봇 */}
+      {view === 'price' && <PriceChatbot />}
 
       {/* 조회 */}
       {view === 'track' && (

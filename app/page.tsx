@@ -13,7 +13,7 @@ export default function LandingPage() {
     }}>
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
         <div style={{ fontSize: '48px', marginBottom: '10px' }}>🧵</div>
-        <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#111', marginBottom: '8px' }}>수선나라</h1>
+        <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#111', marginBottom: '8px' }}>에벤에셀옷수선</h1>
         <p style={{ fontSize: '15px', color: '#666' }}>어떤 용도로 사용하시나요?</p>
       </div>
 
@@ -45,7 +45,7 @@ export default function LandingPage() {
         </button>
       </div>
 
-      <p style={{ marginTop: '40px', fontSize: '12px', color: '#aaa' }}>© 수선나라</p>
+      <p style={{ marginTop: '40px', fontSize: '12px', color: '#aaa' }}>© 에벤에셀옷수선</p>
     </div>
   );
 }

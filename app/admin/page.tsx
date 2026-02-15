@@ -13,6 +13,7 @@ import RegisterView from '../../components/RegisterView';
 import ListView from '../../components/ListView';
 import EditModal from '../../components/EditModal';
 import CategorySettings from '../../components/CategorySettings';
+import PriceTableSettings, { type PriceTable } from '../../components/PriceTableSettings';
 import StatsView from '../../components/StatsView';
 
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || '1234';
@@ -26,6 +27,7 @@ export default function AdminPage() {
   // 데이터
   const [tickets, setTickets] = useState<any[]>([]);
   const [categories, setCategories] = useState<Record<string, string[]>>(DEFAULT_CATEGORIES);
+  const [priceTable, setPriceTable] = useState<PriceTable>({});
 
   // 뷰 상태
   const [searchTerm, setSearchTerm] = useState('');
@@ -91,7 +93,6 @@ export default function AdminPage() {
         if (catDoc.exists() && catDoc.data().list) {
           setCategories(catDoc.data().list);
         } else {
-          // 기본 카테고리 저장
           await setDoc(doc(db, "settings", "categories"), { list: DEFAULT_CATEGORIES });
         }
       } catch (e) {
@@ -99,6 +100,19 @@ export default function AdminPage() {
       }
     };
     loadCategories();
+
+    // 참고 가격표 로드
+    const loadPriceTable = async () => {
+      try {
+        const ptDoc = await getDoc(doc(db, "settings", "priceTable"));
+        if (ptDoc.exists() && ptDoc.data().list) {
+          setPriceTable(ptDoc.data().list);
+        }
+      } catch (e) {
+        console.log("가격표 로드 실패:", e);
+      }
+    };
+    loadPriceTable();
 
     return () => unsubscribe();
   }, [isAuth]);
@@ -245,13 +259,21 @@ export default function AdminPage() {
     } catch (e) { alert("카테고리 저장 실패!"); }
   };
 
+  const savePriceTable = async (table: PriceTable) => {
+    setPriceTable(table);
+    try {
+      await setDoc(doc(db, "settings", "priceTable"), { list: table });
+      alert("참고 가격표가 저장되었습니다.");
+    } catch (e) { alert("가격표 저장 실패!"); }
+  };
+
   const downloadExcel = () => {
     if (!confirm("엑셀로 저장할까요?")) return;
     let csvContent = "data:text/csv;charset=utf-8,\uFEFF일련번호,이름,전화번호,대분류,소분류,내용,가격,결제,상태,맡긴날,마감일\n";
     tickets.forEach(t => csvContent += `${t.dailyNumber || ''},${t.name},${t.phone},${t.category},${t.subCategory || ''},${t.item},${t.price},${t.paymentMethod},${t.status},${t.receivedDate || ''},${t.dueDate}\n`);
     const link = document.createElement("a");
     link.href = encodeURI(csvContent);
-    link.download = `수선나라_장부_${today}.csv`;
+    link.download = `에벤에셀옷수선_장부_${today}.csv`;
     link.click();
   };
 
@@ -269,7 +291,7 @@ export default function AdminPage() {
       {printTicket && (
         <div id="print-area" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'white', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '20px' }}>
           <div style={{ width: '300px', border: '2px solid black', padding: '15px', textAlign: 'center', fontFamily: 'sans-serif' }}>
-            <h2 style={{ fontSize: '16px', margin: '0 0 10px 0', borderBottom: '2px solid black', paddingBottom: '5px' }}>🧵 수선나라</h2>
+            <h2 style={{ fontSize: '16px', margin: '0 0 10px 0', borderBottom: '2px solid black', paddingBottom: '5px' }}>🧵 에벤에셀옷수선</h2>
             <div style={{ fontSize: '60px', fontWeight: '900', margin: '10px 0', lineHeight: '1' }}>#{printTicket.dailyNumber || '?'}</div>
             <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '5px' }}>{printTicket.name}</div>
             <div style={{ fontSize: '14px', marginBottom: '15px' }}>{printTicket.phone ? printTicket.phone.slice(-4) : ''}</div>
@@ -292,7 +314,7 @@ export default function AdminPage() {
       <div className="no-print">
         <div style={{ marginBottom: '15px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111' }}>🧵 수선나라 사장님앱</h1>
+            <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111' }}>🧵 에벤에셀옷수선 사장님앱</h1>
             <button onClick={handleLogout} style={{ fontSize: '12px', color: '#999', background: 'none', border: '1px solid #ddd', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer' }}>로그아웃</button>
           </div>
 
@@ -309,6 +331,7 @@ export default function AdminPage() {
             <TabButton name="✍️ 접수" active={view === 'register'} onClick={() => setView('register')} />
             <TabButton name="📈 분석" active={view === 'stats'} onClick={() => setView('stats')} />
             <TabButton name="📝 목록" active={view === 'list'} onClick={() => setView('list')} />
+            <TabButton name="💰 가격표" active={view === 'pricetable'} onClick={() => setView('pricetable')} />
             <TabButton name="⚙️ 설정" active={view === 'settings'} onClick={() => setView('settings')} />
           </div>
         </div>
@@ -362,6 +385,11 @@ export default function AdminPage() {
             deleteTicket={deleteTicket} sendSms={sendSms}
             onPrint={handlePrint} onEdit={handleEdit}
           />
+        )}
+
+        {/* 참고 가격표 */}
+        {view === 'pricetable' && (
+          <PriceTableSettings categories={categories} priceTable={priceTable} onSave={savePriceTable} />
         )}
 
         {/* 설정 */}
