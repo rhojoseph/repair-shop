@@ -25,6 +25,7 @@ export default function TicketCard({ ticket, toggleStatus, deleteTicket, sendSms
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px', flexWrap: 'wrap' }}>
             {ticket.isUrgent && <span style={{ background: '#fee2e2', color: '#ef4444', fontSize: '10px', padding: '2px 4px', borderRadius: '4px', fontWeight: 'bold', flexShrink: 0 }}>급!</span>}
             {ticket.status === '요청' && <span style={{ background: '#e0e7ff', color: '#3730a3', fontSize: '10px', padding: '2px 4px', borderRadius: '4px', fontWeight: 'bold', flexShrink: 0 }}>요청</span>}
+            {ticket.paymentMethod === '후불' && <span style={{ background: '#fef3c7', color: '#b45309', fontSize: '10px', padding: '2px 4px', borderRadius: '4px', fontWeight: 'bold', flexShrink: 0 }}>후불</span>}
             <strong style={{ fontSize: '15px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#111' }}>{ticket.name}</strong>
             <span style={{ fontSize: '12px', color: '#666' }}>{ticket.phone ? ticket.phone.slice(-4) : ''}</span>
           </div>
@@ -34,6 +35,7 @@ export default function TicketCard({ ticket, toggleStatus, deleteTicket, sendSms
           <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
             {ticket.receivedDate && <span style={{ marginRight: '6px' }}>맡김:{ticket.receivedDate.slice(5)}</span>}
             마감:{ticket.dueDate?.slice(5)} <span style={{ color: '#2563eb', fontWeight: 'bold' }}>{Number(ticket.price || 0).toLocaleString()}</span>
+            {ticket.paymentMethod === '후불' && <span style={{ marginLeft: '4px', color: '#b45309', fontSize: '11px', fontWeight: 'bold' }}>(후불)</span>}
           </div>
         </div>
       </div>
