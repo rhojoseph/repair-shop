@@ -60,7 +60,7 @@ export default function RegisterView({ newItem, setNewItem, handlePhoneChange, f
         {/* 금액, 결제, 급함 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', alignItems: 'end' }}>
           <div><label style={labelStyle}>금액</label><input type="number" placeholder="0" value={newItem.price} onChange={(e) => setNewItem({ ...newItem, price: e.target.value })} style={inputStyle} /></div>
-          <div><label style={labelStyle}>결제</label><select value={newItem.paymentMethod} onChange={(e) => setNewItem({ ...newItem, paymentMethod: e.target.value })} style={inputStyle}><option value="카드">💳 카드</option><option value="현금">💵 현금</option><option value="이체">📱 이체</option></select></div>
+          <div><label style={labelStyle}>결제</label><select value={newItem.paymentMethod} onChange={(e) => setNewItem({ ...newItem, paymentMethod: e.target.value })} style={inputStyle}><option value="카드">💳 카드</option><option value="현금">💵 현금</option><option value="이체">📱 이체</option><option value="후불">📋 후불</option></select></div>
           <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', background: '#fee2e2', padding: '0 10px', borderRadius: '5px', color: 'red', fontWeight: 'bold', height: '44px', fontSize: '13px' }}>
             <input type="checkbox" checked={newItem.isUrgent} onChange={(e) => setNewItem({ ...newItem, isUrgent: e.target.checked })} style={{ marginRight: '5px' }} />급함
           </label>

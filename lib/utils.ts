@@ -13,6 +13,23 @@ export function formatPhone(value: string): string {
   return val;
 }
 
+/** 티켓의 맡긴일 (receivedDate 우선, 없으면 createdAt, 없으면 dueDate) */
+export function getReceivedDateStr(t: any): string {
+  if (t.receivedDate) return t.receivedDate;
+  if (t.createdAt?.toDate) return getTodayStringFromDate(t.createdAt.toDate());
+  return t.dueDate || '';
+}
+
+/** YYYY-MM-DD 문자열에서 요일 인덱스 반환 (0=일, 1=월, ... 6=토) */
+export function getDayOfWeek(dateStr: string): number {
+  if (!dateStr) return -1;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.getDay();
+}
+
+export const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
 export const DEFAULT_CATEGORIES: Record<string, string[]> = {
   "바지": ["단수선", "기장수선", "통줄임", "허리줄임"],
   "자켓": ["소매줄임", "어깨줄임", "기장줄임"],

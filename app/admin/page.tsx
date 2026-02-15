@@ -5,7 +5,7 @@ import { db, storage } from '../../lib/firebase';
 import { collection, onSnapshot, addDoc, query, orderBy, deleteDoc, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import imageCompression from 'browser-image-compression';
-import { getTodayStringFromDate, formatPhone, DEFAULT_CATEGORIES } from '../../lib/utils';
+import { getTodayStringFromDate, formatPhone, DEFAULT_CATEGORIES, getReceivedDateStr } from '../../lib/utils';
 
 import TabButton from '../../components/TabButton';
 import TicketCard from '../../components/TicketCard';
@@ -13,6 +13,7 @@ import RegisterView from '../../components/RegisterView';
 import ListView from '../../components/ListView';
 import EditModal from '../../components/EditModal';
 import CategorySettings from '../../components/CategorySettings';
+import StatsView from '../../components/StatsView';
 
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || '1234';
 
@@ -148,12 +149,12 @@ export default function AdminPage() {
   const tomorrow = getTodayStringFromDate(d);
   const currentMonthKey = today.slice(0, 7);
 
-  // --- 통계 ---
+  // --- 통계 (맡긴일 기준) ---
   const todayRevenue = tickets
-    .filter(t => t.createdAt && t.createdAt.toDate && getTodayStringFromDate(t.createdAt.toDate()) === today)
+    .filter(t => getReceivedDateStr(t) === today)
     .reduce((sum, t) => sum + Number(t.price || 0), 0);
 
-  const monthTickets = tickets.filter(t => t.dueDate?.startsWith(currentMonthKey));
+  const monthTickets = tickets.filter(t => getReceivedDateStr(t).startsWith(currentMonthKey));
   const monthRevenue = monthTickets.reduce((sum, t) => sum + Number(t.price || 0), 0);
   const monthCount = monthTickets.length;
 
@@ -162,51 +163,6 @@ export default function AdminPage() {
 
   // 요청 티켓
   const requestTickets = tickets.filter(t => t.status === '요청');
-
-  // 6개월 그래프
-  const getLast6Months = () => {
-    const months = [];
-    for (let i = 5; i >= 0; i--) {
-      const dd = new Date();
-      dd.setMonth(dd.getMonth() - i);
-      const m = String(dd.getMonth() + 1).padStart(2, '0');
-      months.push(`${dd.getFullYear()}-${m}`);
-    }
-    return months;
-  };
-  const last6Months = getLast6Months();
-  const monthlyData = last6Months.map(month => {
-    const revenue = tickets.filter(t => t.dueDate?.startsWith(month)).reduce((sum, t) => sum + Number(t.price || 0), 0);
-    return { month, revenue };
-  });
-  const maxRevenue = Math.max(...monthlyData.map(d => d.revenue)) || 1;
-
-  // 카테고리 통계
-  const categoryStats = tickets.reduce((acc: any, t) => {
-    const cat = t.subCategory ? `${t.category}/${t.subCategory}` : (t.category || '기타');
-    acc[cat] = (acc[cat] || 0) + Number(t.price || 0);
-    return acc;
-  }, {});
-  const totalForStats = Object.values(categoryStats).reduce((a: any, b: any) => Number(a) + Number(b), 0) || 1;
-
-  let topCategory = '없음';
-  let topCatRevenue = 0;
-  Object.entries(categoryStats).forEach(([cat, rev]: any) => {
-    if (Number(rev) > topCatRevenue) { topCategory = cat; topCatRevenue = Number(rev); }
-  });
-
-  const paymentStats = tickets.reduce((acc: any, t) => {
-    const method = t.paymentMethod || '카드';
-    acc[method] = (acc[method] || 0) + 1;
-    return acc;
-  }, {});
-  let topPayment = '카드';
-  let topPaymentCount = 0;
-  Object.entries(paymentStats).forEach(([method, count]: any) => {
-    if (Number(count) > topPaymentCount) { topPayment = method; topPaymentCount = Number(count); }
-  });
-
-  const avgPrice = monthCount > 0 ? Math.round(monthRevenue / monthCount) : 0;
 
   // --- 기능 함수 ---
   const handlePhoneChange = (e: any) => {
@@ -395,88 +351,7 @@ export default function AdminPage() {
         )}
 
         {/* 분석 */}
-        {view === 'stats' && (
-          <div style={{ background: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '2px solid #f3f4f6', paddingBottom: '10px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#111' }}>📈 우리가게 분석</h2>
-              <button onClick={downloadExcel} style={{ fontSize: '12px', background: '#166534', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer' }}>엑셀저장</button>
-            </div>
-
-            <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#444', marginBottom: '10px' }}>🏆 이번 달 성적 ({currentMonthKey})</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '25px' }}>
-              <div style={{ background: '#eff6ff', padding: '15px', borderRadius: '10px', border: '1px solid #bfdbfe', textAlign: 'center' }}>
-                <span style={{ fontSize: '13px', color: '#1e40af', fontWeight: 'bold' }}>총 매출</span>
-                <div style={{ fontSize: '18px', fontWeight: '900', color: '#1e40af', marginTop: '5px' }}>{monthRevenue.toLocaleString()}원</div>
-              </div>
-              <div style={{ background: '#fdf2f8', padding: '15px', borderRadius: '10px', border: '1px solid #fbcfe8', textAlign: 'center' }}>
-                <span style={{ fontSize: '13px', color: '#9d174d', fontWeight: 'bold' }}>작업한 옷</span>
-                <div style={{ fontSize: '18px', fontWeight: '900', color: '#9d174d', marginTop: '5px' }}>{monthCount}벌</div>
-              </div>
-            </div>
-
-            <div style={{ background: '#f0fdf4', padding: '15px', borderRadius: '10px', marginBottom: '30px', border: '1px solid #86efac', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#15803d', marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
-                🤖 제미나이 점장의 한마디
-              </h3>
-              <ul style={{ margin: 0, paddingLeft: '0', listStyle: 'none', display: 'grid', gap: '10px' }}>
-                <li style={{ fontSize: '14px', color: '#333', display: 'flex', alignItems: 'start', gap: '10px' }}>
-                  <span style={{ fontSize: '18px' }}>🥇</span>
-                  <span>
-                    <strong>효자 종목은 [{topCategory}] 입니다!</strong><br />
-                    <span style={{ fontSize: '12px', color: '#666' }}>지금 매출의 <strong style={{ color: '#15803d' }}>{Math.round((Number(topCatRevenue) / Number(totalForStats)) * 100)}%</strong>를 벌어주고 있어요.</span>
-                  </span>
-                </li>
-                <li style={{ fontSize: '14px', color: '#333', display: 'flex', alignItems: 'start', gap: '10px' }}>
-                  <span style={{ fontSize: '18px' }}>💳</span>
-                  <span>
-                    <strong>손님들은 [{topPayment}] 결제를 선호해요.</strong><br />
-                    <span style={{ fontSize: '12px', color: '#666' }}>
-                      {topPayment === '현금' ? '거스름돈을 미리 넉넉히 준비해두세요!' : '카드 결제가 많으니 정산이 편하겠네요!'}
-                    </span>
-                  </span>
-                </li>
-                <li style={{ fontSize: '14px', color: '#333', display: 'flex', alignItems: 'start', gap: '10px' }}>
-                  <span style={{ fontSize: '18px' }}>💰</span>
-                  <span>
-                    <strong>손님 한 분당 평균 {avgPrice.toLocaleString()}원 쓰시네요.</strong><br />
-                    <span style={{ fontSize: '12px', color: '#666' }}>비싼 옷 수선이 들어오면 이 금액이 쑥 올라갈 거예요.</span>
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#444', marginBottom: '10px' }}>📅 최근 6개월 매출 흐름</h3>
-            <div style={{ display: 'flex', alignItems: 'flex-end', height: '150px', gap: '5px', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
-              {monthlyData.map((d) => {
-                const MAX_BAR_HEIGHT = 120;
-                const heightPx = d.revenue === 0 ? 2 : (Number(d.revenue) / Number(maxRevenue)) * MAX_BAR_HEIGHT;
-                return (
-                  <div key={d.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-                    <span style={{ fontSize: '10px', color: '#666', fontWeight: 'bold' }}>{d.revenue > 0 ? (d.revenue / 10000).toFixed(0) : ''}</span>
-                    <div style={{ width: '100%', height: `${heightPx}px`, background: d.month === currentMonthKey ? '#2563eb' : '#cbd5e1', borderRadius: '4px 4px 0 0' }}></div>
-                    <span style={{ fontSize: '10px', color: '#444' }}>{d.month.split('-')[1]}</span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#444', marginBottom: '10px', marginTop: '20px' }}>💰 뭐로 돈을 벌었을까?</h3>
-            <div style={{ marginBottom: '20px' }}>
-              {Object.entries(categoryStats).map(([cat, price]: any) => {
-                const percent = Math.round((Number(price) / Number(totalForStats)) * 100);
-                return (
-                  <div key={cat} style={{ marginBottom: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '3px' }}>
-                      <span style={{ fontWeight: 'bold' }}>{cat}</span>
-                      <span style={{ fontWeight: 'bold', color: '#2563eb' }}>{percent}% ({price.toLocaleString()}원)</span>
-                    </div>
-                    <div style={{ width: '100%', background: '#f3f4f6', height: '10px', borderRadius: '5px', overflow: 'hidden' }}><div style={{ width: `${percent}%`, background: '#3b82f6', height: '100%' }}></div></div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {view === 'stats' && <StatsView tickets={tickets} today={today} onDownloadExcel={downloadExcel} />}
 
         {/* 목록 */}
         {view === 'list' && (
